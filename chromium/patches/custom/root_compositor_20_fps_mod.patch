@@ -1,0 +1,15 @@
+--- a/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.cc
++++ b/components/viz/service/frame_sinks/root_compositor_frame_sink_impl.cc
+@@ -719,6 +719,12 @@ void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {
+     settings.interval_settings = {};
+   }
+ 
++  // Making magic here
++  FrameIntervalMatcher::FixedIntervalSettings fixed_interval_settings;
++  fixed_interval_settings.default_interval = base::Milliseconds(50);
++  fixed_interval_settings.supported_intervals = { base::Milliseconds(50) };
++  settings.interval_settings = fixed_interval_settings;
++
+   // Unretained is safe since this owns Display which owns FrameIntervalDecider.
+   settings.result_callback = base::BindRepeating(
+       &RootCompositorFrameSinkImpl::FrameIntervalDeciderResultCallback,

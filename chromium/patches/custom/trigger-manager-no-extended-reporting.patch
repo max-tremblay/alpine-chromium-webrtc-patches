@@ -1,0 +1,13 @@
+--- a/components/safe_browsing/content/browser/triggers/trigger_manager.cc
++++ b/components/safe_browsing/content/browser/triggers/trigger_manager.cc
+@@ -122,9 +122,9 @@ TriggerManager::DataCollectionPermissions
+ TriggerManager::GetDataCollectionPermissions(
+     const PrefService& pref_service,
+     content::WebContents* web_contents) {
+   return DataCollectionPermissions(
+-      IsExtendedReportingOptInAllowed(pref_service),
++      false,
+       web_contents->GetBrowserContext()->IsOffTheRecord(),
+-      IsExtendedReportingEnabledBypassDeprecationFlag(pref_service));
++      false);
+ }

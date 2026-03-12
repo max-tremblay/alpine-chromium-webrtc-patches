@@ -1,0 +1,18 @@
+--- a/chrome/browser/ui/views/download/download_danger_prompt_views.cc
++++ b/chrome/browser/ui/views/download/download_danger_prompt_views.cc
+@@ -1,15 +1,2 @@
+     if (download_->IsDangerous() && !download_->IsDone()) {
+-      // Survey triggered on ACCEPT action, since this is where the user
+-      // confirms their choice to keep a dangerous download, rather than
+-      // triggering a survey after selecting to KEEP in the downloads page UI.
+-      if (safe_browsing::IsSafeBrowsingSurveysEnabled(*profile_->GetPrefs()) &&
+-          accept) {
+-        TrustSafetySentimentService* trust_safety_sentiment_service =
+-            TrustSafetySentimentServiceFactory::GetForProfile(profile_);
+-        if (trust_safety_sentiment_service) {
+-          trust_safety_sentiment_service->InteractedWithDownloadWarningUI(
+-              DownloadItemWarningData::WarningSurface::DOWNLOAD_PROMPT,
+-              DownloadItemWarningData::WarningAction::PROCEED);
+-        }
+-      }
+       // Log here for "Shown" unconditionally, and for "Proceed" iff the dialog

@@ -1,0 +1,19 @@
+--- a/chrome/browser/enterprise/signals/context_info_fetcher.cc
++++ b/chrome/browser/enterprise/signals/context_info_fetcher.cc
+@@ -14,6 +14,7 @@
+ #include "chrome/browser/policy/chrome_browser_policy_connector.h"
+ #include "chrome/browser/policy/profile_policy_connector.h"
+ #include "chrome/browser/profiles/profile.h"
++#include "components/prefs/pref_service.h"
+ #include "chrome/common/pref_names.h"
+ #include "components/device_signals/core/browser/browser_utils.h"
+ #include "components/enterprise/browser/identifiers/profile_id_service.h"
+--- a/chrome/browser/enterprise/signals/profile_signals_collector.cc
++++ b/chrome/browser/enterprise/signals/profile_signals_collector.cc
+@@ -9,6 +9,7 @@
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/enterprise/identifiers/profile_id_service_factory.h"
++#include "chrome/browser/enterprise/connectors/connectors_service.h"
+ #include "chrome/browser/profiles/profile.h"
+ #include "chrome/common/pref_names.h"
+ #include "components/device_signals/core/browser/browser_utils.h"

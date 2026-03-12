@@ -1,0 +1,29 @@
+Newer rustc emits source file paths alongside the compiled artifact as
+make-rule targets in dep-info files (e.g. "src/lib.rs libfoo.rlib: ..."),
+which ninja rejects as "bad depfile: multiple outputs". Strip .rs paths
+from the target side of dep-info rules in rustc_wrapper.py.
+--
+--- a/build/rust/rustc_wrapper.py
++++ b/build/rust/rustc_wrapper.py
+@@ -215,7 +215,20 @@
+       if m and m.group(1) in fixed_env_vars:
+         dirty = True  # We want to skip this line.
+       else:
+-        final_depfile_lines.append(line)
++        # Newer rustc versions emit source file paths alongside the compiled
++        # artifact as make-rule targets (e.g. "src/lib.rs libfoo.rlib: ..."),
++        # which ninja rejects as "multiple outputs". Remove .rs paths.
++        colon_pos = line.find(':')
++        if colon_pos != -1:
++          targets = line[:colon_pos].split()
++          if len(targets) > 1:
++            filtered = [t for t in targets if not t.endswith('.rs')]
++            if not filtered:
++              filtered = targets[-1:]
++            if len(filtered) < len(targets):
++              line = ' '.join(filtered) + line[colon_pos:]
++              dirty = True
++        final_depfile_lines.append(line)
+
+   # Verify each dependent file is listed in sources/inputs.
+   for line in final_depfile_lines:

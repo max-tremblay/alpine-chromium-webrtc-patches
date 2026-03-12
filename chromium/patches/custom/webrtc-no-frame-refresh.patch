@@ -1,0 +1,25 @@
+--- a/third_party/blink/renderer/modules/mediastream/media_stream_video_renderer_sink.cc
++++ b/third_party/blink/renderer/modules/mediastream/media_stream_video_renderer_sink.cc
+@@ -65,6 +65,12 @@ class MediaStreamVideoRendererSink::FrameDeliverer {
+                          TRACE_EVENT_SCOPE_THREAD, "timestamp",
+                          frame->timestamp().InMilliseconds());
+ 
++    if (!first_frame_delivered_) {
++      first_frame_delivered_ = true;
++    } else {
++      return;
++    }
++
+     if (state_ != kStarted) {
+       if (emit_frame_drop_events_) {
+         emit_frame_drop_events_ = false;
+@@ -127,6 +133,8 @@ class MediaStreamVideoRendererSink::FrameDeliverer {
+ 
+   friend class MediaStreamVideoRendererSink;
+ 
++  bool first_frame_delivered_ = false;
++
+   const scoped_refptr<base::SingleThreadTaskRunner> main_render_task_runner_;
+   const RepaintCB repaint_cb_;
+   base::WeakPtr<MediaStreamVideoRendererSink> media_stream_video_renderer_sink_;
+

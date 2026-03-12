@@ -1,0 +1,11 @@
+--- a/chrome/browser/safe_browsing/url_checker_delegate_impl.cc
++++ b/chrome/browser/safe_browsing/url_checker_delegate_impl.cc
+@@ -177,9 +177,7 @@ bool UrlCheckerDelegateImpl::ShouldSkipRequestForPluginContent(
+ bool UrlCheckerDelegateImpl::AreBackgroundHashRealTimeSampleLookupsAllowed(
+     const base::RepeatingCallback<content::WebContents*()>&
+         web_contents_getter) {
+-  Profile* profile = Profile::FromBrowserContext(
+-      web_contents_getter.Run()->GetBrowserContext());
+-  return safe_browsing::IsEnhancedProtectionEnabled(*profile->GetPrefs());
++  return false;
+ }

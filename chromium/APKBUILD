@@ -1,0 +1,1090 @@
+# Contributor: Carlo Landmeter <clandmeter@alpinelinux.org>
+# Contributor: Elly Fong-Jones <elly@elly.town>
+# Maintainer: lauren n. liberda <lauren@selfisekai.rocks>
+pkgname=chromium
+pkgver=139.0.7258.66
+pkgrel=0
+_copium_tag=138.0
+# DEPS file -> deps['src/third_party/test_fonts']['objects'][0]['object_name']
+# (for the given version, when it changes)
+_testfonts=336e775eec536b2d785cc80eff6ac39051931286
+pkgdesc="Chromium web browser"
+url="https://www.chromium.org/Home"
+arch="aarch64 armv7 x86_64"
+license="BSD-3-Clause"
+# explicit depends for --headless
+# XXX: eudev-libs replaced by so:libudev.so.1 to allow installation with libudev-zero
+# take care if libudev.so ever updates somajor..
+depends="
+	$pkgname-common=$pkgver-r$pkgrel
+	font-opensans
+	gtk+3.0
+	icu-data-full
+	mesa-dri-gallium
+	musl>=1.2.3_git20230322-r0
+	so:libudev.so.1
+	xdg-utils
+	"
+_llvmver=20
+makedepends="
+	alsa-lib-dev
+	bash
+	bison
+	bsd-compat-headers
+	brotli-dev
+	bzip2-dev
+	cairo-dev
+	clang$_llvmver-dev
+	clang$_llvmver-rtlib
+	crc32c-dev
+	cups-dev
+	curl-dev
+	dav1d-dev
+	dbus-glib-dev
+	double-conversion-dev
+	elfutils
+	elfutils-dev
+	eudev-dev
+	ffmpeg-dev
+	findutils
+	flac-dev
+	flatbuffers-dev
+	flex
+	freetype-dev
+	gn
+	gperf
+	gtk+3.0-dev
+	gzip
+	harfbuzz-dev
+	hunspell-dev
+	hwdata-dev
+	jpeg-dev
+	jsoncpp-dev
+	krb5-dev
+	lcms2-dev
+	libbsd-dev
+	libcap-dev
+	libevdev-dev
+	libexif-dev
+	libffi-dev
+	libgcrypt-dev
+	libjpeg-turbo-dev
+	libsecret-dev
+	libusb-dev
+	libva-dev
+	libwebp-dev
+	libxcomposite-dev
+	libxcursor-dev
+	libxinerama-dev
+	libxml2-dev
+	libxrandr-dev
+	libxscrnsaver-dev
+	libxslt-dev
+	linux-headers
+	lld$_llvmver
+	llvm$_llvmver
+	mesa-dev
+	minizip-dev
+	nodejs
+	nss-dev
+	openh264-dev
+	opus-dev
+	pciutils-dev
+	perl
+	pipewire-dev
+	pulseaudio-dev
+	py3-setuptools
+	python3
+	qt6-qtbase-dev
+	re2-dev
+	rust
+	rust-bindgen
+	samurai
+	simdutf-dev
+	snappy-dev
+	speex-dev
+	spirv-tools-dev
+	sqlite-dev
+	woff2-dev
+	xcb-proto
+	zlib-dev
+	zstd-dev
+	"
+checkdepends="py3-six"
+subpackages="
+	$pkgname-common
+	$pkgname-chromedriver
+	$pkgname-headless-shell:headless_shell
+	$pkgname-doc
+	$pkgname-lang
+	$pkgname-angle
+	$pkgname-swiftshader
+	"
+# In theory Chromium ships its own tarballs via https://chromium-browser-official.commondatastorage.googleapis.com/,
+# however, every sometime they decide to apply patches on top of the source code of Rust, which runs into git conflicts,
+# in which case the CI doesn't publish shit. https://ci.chromium.org/ui/p/infra/builders/cron/publish_tarball
+#
+# The tarballs from Gentoo's kangie also weigh like 5 GiB less, through a very advanced technique of not including
+# .git directories, 2 Debian sysroots, at least 2 full trees of LLVM, full source of GCC, full source and binaries of Rust, ...
+source="
+	https://github.com/chromium-linux-tarballs/chromium-tarballs/releases/download/$pkgver/chromium-$pkgver-linux.tar.xz
+	https://github.com/chromium-linux-tarballs/chromium-tarballs/releases/download/$pkgver/chromium-$pkgver-linux-testdata.tar.xz
+	test_fonts-$_testfonts.tar.gz::https://chromium-fonts.storage.googleapis.com/$_testfonts
+	copium-$_copium_tag.tar.gz::https://codeberg.org/selfisekai/copium/archive/$_copium_tag.tar.gz
+	chromium-launcher.sh
+	chromium.conf
+
+	patches/alpine/compiler.patch
+	patches/alpine/disable-dns_config_service.patch
+	patches/alpine/disable-failing-tests.patch
+	patches/alpine/fc-cache-version.patch
+	patches/alpine/fix-ffmpeg-codec-list.patch
+	patches/alpine/fstatat-32bit.patch
+	patches/alpine/gdbinit.patch
+	patches/alpine/generic-sensor-include.patch
+	patches/alpine/headless-shell-no-license.patch
+	patches/alpine/musl-sandbox.patch
+	patches/alpine/musl-tid-caching.patch
+	patches/alpine/net-test-no-vpython.patch
+	patches/alpine/net-test-pyws3-py3.12.patch
+	patches/alpine/no-execinfo.patch
+	patches/alpine/no-mallinfo.patch
+	patches/alpine/no-res-ninit-nclose.patch
+	patches/alpine/no-sandbox-settls.patch
+	patches/alpine/partalloc-no-tagging-arm64.patch
+	patches/alpine/pvalloc.patch
+	patches/alpine/temp-failure-retry.patch
+
+  patches/ungoogled-chromium/core/block-requests.patch
+  patches/ungoogled-chromium/core/block-trk-and-subdomains.patch
+  patches/ungoogled-chromium/core/disable-crash-reporter.patch
+  patches/ungoogled-chromium/core/disable-domain-reliability.patch
+  patches/ungoogled-chromium/core/disable-fonts-googleapis-references.patch
+  patches/ungoogled-chromium/core/disable-gaia.patch
+  patches/ungoogled-chromium/core/disable-gcm.patch
+  patches/ungoogled-chromium/core/disable-google-host-detection.patch
+  patches/ungoogled-chromium/core/disable-network-time-tracker.patch
+  patches/ungoogled-chromium/core/disable-privacy-sandbox.patch
+  patches/ungoogled-chromium/core/disable-profile-avatar-downloading.patch
+  patches/ungoogled-chromium/core/disable-webrtc-log-uploader.patch
+  patches/ungoogled-chromium/core/disable-webstore-urls.patch
+  patches/ungoogled-chromium/core/doh-changes.patch
+  patches/ungoogled-chromium/core/extensions-manifestv2.patch
+  patches/ungoogled-chromium/core/fix-building-with-prunned-binaries.patch
+  patches/ungoogled-chromium/core/fix-building-without-safebrowsing.patch
+  patches/ungoogled-chromium/core/fix-learn-doubleclick-hsts.patch
+  patches/ungoogled-chromium/core/remove-f1-shortcut.patch
+  patches/ungoogled-chromium/core/remove-unused-preferences-fields.patch
+  patches/ungoogled-chromium/core/replace-google-search-engine-with-nosearch.patch
+  patches/ungoogled-chromium/core/toggle-translation-via-switch.patch
+
+  patches/ungoogled-chromium/extra/disable-chromelabs.patch
+  patches/ungoogled-chromium/extra/disable-download-quarantine.patch
+  patches/ungoogled-chromium/extra/disable-downloads-page-referrer-url.patch
+  patches/ungoogled-chromium/extra/disable-formatting-in-omnibox.patch
+  patches/ungoogled-chromium/extra/disable-intranet-redirect-detector.patch
+  patches/ungoogled-chromium/extra/disable-remote-optimization-guide.patch
+  patches/ungoogled-chromium/extra/first-run-page.patch
+  patches/ungoogled-chromium/extra/fix-distilled-icons.patch
+  patches/ungoogled-chromium/extra/keep-expired-flags.patch
+  patches/ungoogled-chromium/extra/prepopulated-search-engines.patch
+  patches/ungoogled-chromium/extra/remove-disable-setuid-sandbox-as-bad-flag.patch
+  patches/ungoogled-chromium/extra/remove-pac-size-limit.patch
+  patches/ungoogled-chromium/extra/remove-uneeded-ui.patch
+
+	patches/custom/change-no_sanitize-to-sanitize-rust.patch
+	patches/custom/disable_libvpx_decoding.patch
+	patches/custom/rust-alloc-error-handler-v2-stub.patch
+	patches/custom/revoked-permissions-profile-include.patch
+	patches/custom/enterprise-signals-missing-includes.patch
+	patches/custom/trigger-manager-no-extended-reporting.patch
+	patches/custom/url-checker-delegate-no-enhanced-protection.patch
+	patches/custom/download-danger-prompt-no-sb-surveys.patch
+	patches/custom/enterprise-util-interstitial-stubs.patch
+	patches/custom/qr-code-rust-lifetime-syntax.patch
+	patches/custom/root_compositor_20_fps_mod.patch
+	patches/custom/rust-no-unicode-width-rlib.patch
+	patches/custom/rustc-depfile-multiple-outputs.patch
+	patches/custom/webrtc_remove_audio_process.patch
+	patches/custom/webrtc-no-frame-refresh.patch
+	patches/custom/webrtc-no-opus-decode.patch
+
+	"
+_copium_patches="
+	cr131-v8-non4k-pages.patch
+	cr133-ffmpeg-no-noh264parse.patch
+	cr133-is-musl-libcxx.patch
+	cr135-mv2-still-not-dead.patch
+	cr138-node-version-check.patch
+	"
+# chrome-sandbox can use suid when user namespaces aren't available, but uses only userns and drops privileges normally
+options="suid"
+
+case "$CARCH" in
+riscv64)
+	;;
+*)
+	# dbg outside riscv only
+	subpackages="$pkgname-dbg $subpackages"
+	;;
+esac
+
+case "$CARCH" in
+x86_64|aarch64)
+	;;
+*)
+	# 32-bit fails a bunch of tests for various size-related reasons
+	options="$options !check"
+	;;
+esac
+
+# secfixes:
+#   116.0.5845.187-r0:
+#     - CVE-2023-4863
+#   103.0.5060.134-r0:
+#     - CVE-2022-2163
+#     - CVE-2022-2477
+#     - CVE-2022-2478
+#     - CVE-2022-2479
+#     - CVE-2022-2480
+#     - CVE-2022-2481
+#   103.0.5060.114-r0:
+#     - CVE-2022-2294
+#     - CVE-2022-2295
+#     - CVE-2022-2296
+#   103.0.5060.53-r0:
+#     - CVE-2022-2156
+#     - CVE-2022-2157
+#     - CVE-2022-2158
+#     - CVE-2022-2160
+#     - CVE-2022-2161
+#     - CVE-2022-2162
+#     - CVE-2022-2163
+#     - CVE-2022-2164
+#     - CVE-2022-2165
+#   102.0.5005.61-r0:
+#     - CVE-2022-1853
+#     - CVE-2022-1854
+#     - CVE-2022-1855
+#     - CVE-2022-1856
+#     - CVE-2022-1857
+#     - CVE-2022-1858
+#     - CVE-2022-1859
+#     - CVE-2022-1860
+#     - CVE-2022-1861
+#     - CVE-2022-1862
+#     - CVE-2022-1863
+#     - CVE-2022-1864
+#     - CVE-2022-1865
+#     - CVE-2022-1866
+#     - CVE-2022-1867
+#     - CVE-2022-1868
+#     - CVE-2022-1869
+#     - CVE-2022-1870
+#     - CVE-2022-1871
+#     - CVE-2022-1872
+#     - CVE-2022-1873
+#     - CVE-2022-1874
+#     - CVE-2022-1875
+#     - CVE-2022-1876
+#   101.0.4951.64-r0:
+#     - CVE-2022-1633
+#     - CVE-2022-1634
+#     - CVE-2022-1635
+#     - CVE-2022-1636
+#     - CVE-2022-1637
+#     - CVE-2022-1638
+#     - CVE-2022-1639
+#     - CVE-2022-1640
+#     - CVE-2022-1641
+#   101.0.4951.54-r0:
+#     - CVE-2022-1477
+#     - CVE-2022-1478
+#     - CVE-2022-1479
+#     - CVE-2022-1481
+#     - CVE-2022-1482
+#     - CVE-2022-1483
+#     - CVE-2022-1484
+#     - CVE-2022-1485
+#     - CVE-2022-1486
+#     - CVE-2022-1487
+#     - CVE-2022-1488
+#     - CVE-2022-1489
+#     - CVE-2022-1490
+#     - CVE-2022-1491
+#     - CVE-2022-1492
+#     - CVE-2022-1493
+#     - CVE-2022-1494
+#     - CVE-2022-1495
+#     - CVE-2022-1496
+#     - CVE-2022-1497
+#     - CVE-2022-1498
+#     - CVE-2022-1499
+#     - CVE-2022-1500
+#     - CVE-2022-1501
+#   100.0.4896.127-r0:
+#     - CVE-2022-1364
+#   99.0.4844.84-r0:
+#     - CVE-2022-1096
+#   98.0.4758.102-r0:
+#     - CVE-2022-0452
+#     - CVE-2022-0453
+#     - CVE-2022-0454
+#     - CVE-2022-0455
+#     - CVE-2022-0456
+#     - CVE-2022-0457
+#     - CVE-2022-0458
+#     - CVE-2022-0459
+#     - CVE-2022-0460
+#     - CVE-2022-0461
+#     - CVE-2022-0462
+#     - CVE-2022-0463
+#     - CVE-2022-0464
+#     - CVE-2022-0465
+#     - CVE-2022-0466
+#     - CVE-2022-0467
+#     - CVE-2022-0468
+#     - CVE-2022-0469
+#     - CVE-2022-0470
+#     - CVE-2022-0603
+#     - CVE-2022-0604
+#     - CVE-2022-0605
+#     - CVE-2022-0606
+#     - CVE-2022-0607
+#     - CVE-2022-0608
+#     - CVE-2022-0609
+#     - CVE-2022-0610
+#   93.0.4577.82-r0:
+#     - CVE-2021-30625
+#     - CVE-2021-30626
+#     - CVE-2021-30627
+#     - CVE-2021-30628
+#     - CVE-2021-30629
+#     - CVE-2021-30630
+#     - CVE-2021-30631
+#     - CVE-2021-30632
+#     - CVE-2021-30633
+#   93.0.4577.63-r0:
+#     - CVE-2021-30606
+#     - CVE-2021-30607
+#     - CVE-2021-30608
+#     - CVE-2021-30609
+#     - CVE-2021-30610
+#     - CVE-2021-30611
+#     - CVE-2021-30612
+#     - CVE-2021-30613
+#     - CVE-2021-30614
+#     - CVE-2021-30615
+#     - CVE-2021-30616
+#     - CVE-2021-30617
+#     - CVE-2021-30618
+#     - CVE-2021-30619
+#     - CVE-2021-30620
+#     - CVE-2021-30621
+#     - CVE-2021-30622
+#     - CVE-2021-30623
+#     - CVE-2021-30624
+#   92.0.4515.159-r0:
+#     - CVE-2021-30598
+#     - CVE-2021-30599
+#     - CVE-2021-30600
+#     - CVE-2021-30601
+#     - CVE-2021-30602
+#     - CVE-2021-30603
+#     - CVE-2021-30604
+#     - CVE-2021-30590
+#     - CVE-2021-30591
+#     - CVE-2021-30592
+#     - CVE-2021-30593
+#     - CVE-2021-30594
+#     - CVE-2021-30596
+#     - CVE-2021-30597
+#   92.0.4515.107-r0:
+#     - CVE-2021-30565
+#     - CVE-2021-30566
+#     - CVE-2021-30567
+#     - CVE-2021-30568
+#     - CVE-2021-30569
+#     - CVE-2021-30571
+#     - CVE-2021-30572
+#     - CVE-2021-30573
+#     - CVE-2021-30574
+#     - CVE-2021-30575
+#     - CVE-2021-30576
+#     - CVE-2021-30577
+#     - CVE-2021-30578
+#     - CVE-2021-30579
+#     - CVE-2021-30580
+#     - CVE-2021-30581
+#     - CVE-2021-30582
+#     - CVE-2021-30583
+#     - CVE-2021-30584
+#     - CVE-2021-30585
+#     - CVE-2021-30586
+#     - CVE-2021-30587
+#     - CVE-2021-30588
+#     - CVE-2021-30589
+#   91.0.4472.164-r0:
+#     - CVE-2021-30559
+#     - CVE-2021-30541
+#     - CVE-2021-30560
+#     - CVE-2021-30561
+#     - CVE-2021-30562
+#     - CVE-2021-30563
+#     - CVE-2021-30564
+#   91.0.4472.114-r0:
+#     - CVE-2021-30554
+#     - CVE-2021-30555
+#     - CVE-2021-30556
+#     - CVE-2021-30557
+#   91.0.4472.101-r0:
+#     - CVE-2021-30544
+#     - CVE-2021-30545
+#     - CVE-2021-30546
+#     - CVE-2021-30547
+#     - CVE-2021-30548
+#     - CVE-2021-30549
+#     - CVE-2021-30550
+#     - CVE-2021-30551
+#     - CVE-2021-30552
+#     - CVE-2021-30553
+#   91.0.4472.77-r0:
+#     - CVE-2021-30521
+#     - CVE-2021-30522
+#     - CVE-2021-30523
+#     - CVE-2021-30524
+#     - CVE-2021-30525
+#     - CVE-2021-30526
+#     - CVE-2021-30527
+#     - CVE-2021-30528
+#     - CVE-2021-30529
+#     - CVE-2021-30530
+#     - CVE-2021-30531
+#     - CVE-2021-30532
+#     - CVE-2021-30533
+#     - CVE-2021-30534
+#     - CVE-2021-30535
+#     - CVE-2021-30536
+#     - CVE-2021-30537
+#     - CVE-2021-30538
+#     - CVE-2021-30539
+#     - CVE-2021-30540
+#   90.0.4430.72-r0:
+#     - CVE-2021-21201
+#     - CVE-2021-21202
+#     - CVE-2021-21203
+#     - CVE-2021-21204
+#     - CVE-2021-21205
+#     - CVE-2021-21221
+#     - CVE-2021-21207
+#     - CVE-2021-21208
+#     - CVE-2021-21209
+#     - CVE-2021-21210
+#     - CVE-2021-21211
+#     - CVE-2021-21212
+#     - CVE-2021-21213
+#     - CVE-2021-21214
+#     - CVE-2021-21215
+#     - CVE-2021-21216
+#     - CVE-2021-21217
+#     - CVE-2021-21218
+#     - CVE-2021-21219
+#   89.0.4389.128-r0:
+#     - CVE-2021-21206
+#     - CVE-2021-21220
+#   89.0.4389.114-r0:
+#     - CVE-2021-21194
+#     - CVE-2021-21195
+#     - CVE-2021-21196
+#     - CVE-2021-21197
+#     - CVE-2021-21198
+#     - CVE-2021-21199
+#   89.0.4389.90-r0:
+#     - CVE-2021-21191
+#     - CVE-2021-21192
+#     - CVE-2021-21193
+#   89.0.4389.72-r0:
+#     - CVE-2021-21158
+#     - CVE-2021-21159
+#     - CVE-2021-21160
+#     - CVE-2021-21161
+#     - CVE-2021-21162
+#     - CVE-2021-21163
+#     - CVE-2021-21164
+#     - CVE-2021-21165
+#     - CVE-2021-21166
+#     - CVE-2021-21167
+#     - CVE-2021-21168
+#     - CVE-2021-21169
+#     - CVE-2021-21170
+#     - CVE-2021-21171
+#     - CVE-2021-21172
+#     - CVE-2021-21173
+#     - CVE-2021-21174
+#     - CVE-2021-21175
+#     - CVE-2021-21176
+#     - CVE-2021-21177
+#     - CVE-2021-21178
+#     - CVE-2021-21179
+#     - CVE-2021-21180
+#     - CVE-2020-27844
+#     - CVE-2021-21181
+#     - CVE-2021-21182
+#     - CVE-2021-21183
+#     - CVE-2021-21184
+#     - CVE-2021-21185
+#     - CVE-2021-21186
+#     - CVE-2021-21187
+#     - CVE-2021-21188
+#     - CVE-2021-21189
+#     - CVE-2021-21190
+#   83.0.4103.116-r0:
+#     - CVE-2020-6505
+#     - CVE-2020-6506
+#     - CVE-2020-6507
+#     - CVE-2020-6509
+#   72.0.3626.121-r0:
+#     - CVE-2019-5786
+
+
+export RUSTC_BOOTSTRAP=1
+
+upstream_version() {
+	curl --silent https://omahaproxy.appspot.com/all \
+		| awk -F, '$1 == "linux" && $2 == "stable" {print $3}'
+}
+
+prepare() {
+	default_prepare
+
+	for i in $_copium_patches; do
+		msg "$i"
+		patch -p1 -i "$srcdir/copium/$i" || failed="$failed $i"
+	done
+	if [ -n "$failed" ]; then
+		error "The following patches failed to apply:"
+		for i in $failed; do
+			printf "  %s\n" "$i" >&2
+		done
+		exit 1
+	fi
+
+	# why the fuck are there binaries here starting M127? no clue
+	msg "Removing the binaries"
+	scanelf -RA -F "%F" "$builddir" | while read -r elf; do
+		rm -f "$elf"
+	done
+
+	mv ../test_fonts/* -t ./third_party/test_fonts/
+
+	# https://groups.google.com/a/chromium.org/d/topic/chromium-packagers/9JX1N2nf4PU/discussion
+	touch chrome/test/data/webui/i18n_process_css_test.html
+	# Use the file at run time instead of effectively compiling it in
+	sed 's|//third_party/usb_ids/usb.ids|/usr/share/hwdata/usb.ids|g' \
+		-i services/device/public/cpp/usb/BUILD.gn
+
+	mkdir -p third_party/node/linux/node-linux-x64/bin
+	ln -sv /usr/bin/node third_party/node/linux/node-linux-x64/bin/
+
+	# reusable system library settings
+	# highway - requires highway>=1.1.0 (arm failures)
+	# libavif - https://github.com/AOMediaCodec/libavif/commit/50a541469c98009016af8dcc9f83a1be79f3a7d9
+	# libaom - https://aomedia.googlesource.com/aom/+/706ee36dcc82%5E%21/
+	#   but watch this space: https://aomedia-review.googlesource.com/c/aom/+/188606
+	# jsoncpp, re2, snappy, swiftshader-*, woff2 - requires use_custom_libcxx=false
+	# icu 76 does not build - https://bugs.gentoo.org/943216
+	local use_system="
+		brotli
+		crc32c
+		dav1d
+		double-conversion
+		ffmpeg
+		flac
+		fontconfig
+		freetype
+		harfbuzz-ng
+		libdrm
+		libjpeg
+		libsecret
+		libusb
+		libwebp
+		libxml
+		libxslt
+		openh264
+		opus
+		simdutf
+		zlib
+		zstd
+		"
+
+	for _lib in $use_system libjpeg_turbo unrar; do
+		msg "Removing buildscripts for system provided $_lib"
+		_lib="${_lib/swiftshader-/swiftshader/third_party/}"
+			find . -type f -path "*third_party/$_lib/*" \
+			\! -path "*third_party/$_lib/chromium/*" \
+			\! -path "*third_party/$_lib/google/*" \
+			\! -path './base/third_party/icu/*' \
+			\! -path './third_party/libxml/*' \
+			\! -path './third_party/pdfium/third_party/freetype/include/pstables.h' \
+			\! -path './third_party/harfbuzz-ng/utils/hb_scoped.h' \
+			\! -path './third_party/crashpad/crashpad/third_party/zlib/zlib_crashpad.h' \
+			\! -regex '.*\.\(gn\|gni\|isolate\|py\)' \
+			-delete
+	done
+
+	msg "Replacing gn files"
+	python3 build/linux/unbundle/replace_gn_files.py --system-libraries \
+		$use_system
+	python3 third_party/libaddressinput/chromium/tools/update-strings.py
+
+	# flatc is used in build workflows since https://crrev.com/c/5595037,
+	# but the pre-generated files are still checked-in. remove to make sure
+	# they're not used. (if used, they will break builds on version mismatch.)
+	# https://github.com/tensorflow/tensorflow/issues/62298
+	# find third_party/tflite/ -name '*_generated.h' -delete
+
+	# prevent annoying errors when regenerating gni
+	sed -i 's,^update_readme$,#update_readme,' \
+		third_party/libvpx/generate_gni.sh
+
+	# allow system dependencies in "official builds"
+	sed -i 's/OFFICIAL_BUILD/GOOGLE_CHROME_BUILD/' \
+		tools/generate_shim_headers/generate_shim_headers.py
+
+	# https://crbug.com/893950
+	sed -i -e 's/\<xmlMalloc\>/malloc/' -e 's/\<xmlFree\>/free/' \
+		third_party/blink/renderer/core/xml/*.cc \
+		third_party/blink/renderer/core/xml/parser/xml_document_parser.cc \
+		third_party/libxml/chromium/*.cc
+
+	echo "$CTARGET" >> build/rust/known-target-triples.txt
+
+	_configure
+}
+
+_configure() {
+	cd "$builddir"
+
+	export CFLAGS="${CFLAGS/-g/} -O2 -Wno-unknown-warning-option -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-shift-count-overflow -Wno-ignored-attributes"
+	export CXXFLAGS="${CXXFLAGS/-g/} -O2 -Wno-unknown-warning-option -Wno-builtin-macro-redefined -Wno-deprecated-declarations -Wno-invalid-constexpr"
+	export CPPFLAGS="${CPPFLAGS/-g/} -D__DATE__=  -D__TIME__=  -D__TIMESTAMP__="
+
+	# breaks chromium
+	export CXXFLAGS="${CXXFLAGS/-D_GLIBCXX_ASSERTIONS=1}"
+	export CXXFLAGS="${CXXFLAGS/-fstack-clash-protection}"
+
+	# _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE is set by project
+	export CXXFLAGS="${CXXFLAGS/-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST/}"
+	export CFLAGS="${CFLAGS/-fstack-clash-protection}"
+
+	export AR="/usr/lib/llvm$_llvmver/bin/llvm-ar"
+	export CC="/usr/lib/llvm$_llvmver/bin/clang"
+	export CXX="/usr/lib/llvm$_llvmver/bin/clang++"
+	export NM="/usr/lib/llvm$_llvmver/bin/llvm-nm"
+
+	msg "Configuring build"
+
+	# this should be at 0 for -dbg too. change it for local debugging only
+	local symbol_level=0
+
+	case "$CARCH" in
+	riscv64)
+		# no vaapi on riscv support
+		local vaapi=false
+		;;
+	*)
+		local vaapi=true
+		;;
+	esac
+
+	case "$CARCH" in
+	armv7)
+		local maglev=false
+		local gn_threads=--threads=1
+		;;
+	*)
+		local maglev=true
+		local gn_threads=
+		;;
+	esac
+
+	case "$USE_CCACHE" in
+	1)
+		local cc_wrapper="ccache"
+		;;
+	*)
+		local cc_wrapper=""
+		;;
+	esac
+
+	# shellcheck disable=2089
+	local gn_config="
+		blink_enable_generated_code_formatting=false
+		build_with_tflite_lib=false
+		cc_wrapper=\"$cc_wrapper\"
+		chrome_pgo_phase=0
+		clang_base_path=\"/usr/lib/llvm$_llvmver\"
+		clang_use_chrome_plugins=false
+		clang_version=\"$_llvmver\"
+		custom_toolchain=\"//build/toolchain/linux/unbundle:default\"
+		disable_fieldtrial_testing_config=true
+		enable_hangout_services_extension=false
+		enable_mdns=false
+		enable_nocompile_tests=false
+		enable_remoting=false
+		enable_reporting=false
+		enable_rust=true
+		enable_service_discovery=false
+		enable_stripping=false
+		enable_vr=false
+		enable_vulkan=true
+		enable_widevine=true
+		exclude_unwind_tables=true
+		fatal_linker_warnings=false
+		ffmpeg_branding=\"Chrome\"
+		google_api_key=\"\"
+		google_default_client_id=\"\"
+		google_default_client_secret=\"\"
+		host_toolchain=\"//build/toolchain/linux/unbundle:default\"
+		icu_use_data_file=false
+		is_cfi=false
+		is_chrome_branded=false
+		is_clang=true
+		is_component_ffmpeg=true
+		is_debug=false
+		is_musl=true
+		is_official_build=true
+		node_version_check=false
+		proprietary_codecs=true
+		rtc_libvpx_build_vp9=false
+		rtc_link_pipewire=true
+		rtc_use_h265=false
+		rtc_use_pipewire=true
+		rtc_use_x11_extensions=false
+		rtc_use_x11=false
+		rust_bindgen_root=\"/usr\"
+		rust_sysroot_absolute=\"/usr\"
+		rustc_version=\"yes\"
+		safe_browsing_mode=0
+		safe_browsing_use_unrar=false
+		symbol_level=$symbol_level
+		treat_warnings_as_errors=false
+		use_custom_libcxx=true
+		use_lld=true
+		use_official_google_api_keys=false
+		use_pulseaudio=false
+		use_qt6=false
+		use_safe_libstdcxx=false
+		use_sysroot=false
+		use_system_libffi=true
+		use_thin_lto=false
+		use_unofficial_version_number=false
+		use_vaapi=false
+		v8_enable_maglev=$maglev
+    # You may also need to toggle these to true if the link still fails
+    enterprise_cloud_content_analysis=true
+    enterprise_local_content_analysis=true
+		"
+
+	# shellcheck disable=2090,2116
+	gn gen out/bld $gn_threads --args="$(echo $gn_config)"
+}
+
+build() {
+	msg "Ninja turtles GO!"
+
+	# final link needs lots of file descriptors
+	ulimit -n 4096
+
+	# shellcheck disable=2046
+	ninja -C out/bld \
+		chrome \
+		chrome_sandbox \
+		headless_shell \
+		chromedriver.unstripped \
+		chrome_crashpad_handler \
+		$(want_check && echo \
+			base_unittests \
+			net_unittests \
+		)
+
+}
+
+check_base_unittests() {
+	# libstdc++ metabug: https://issues.chromium.org/issues/40939315
+	# musl metabug: https://issues.chromium.org/issues/40244828
+
+	# Fails if ${TMPDIR:-/tmp} is tmpfs. https://issues.chromium.org/issues/428005647
+	broken="DriveInfoTest.GetFileDriveInfo"
+
+	broken="$broken:ElfReaderTestWithCurrentImage.ReadElfBuildId"
+	broken="$broken:FileUtilTest.FileToFILE"
+	broken="$broken:NativeLibraryTest.LoadLibraryPreferOwnSymbols"
+	# Fails on CI only (k8s?)
+	broken="$broken:ProcessUtilTest.CloneFlags"
+
+	# test-launcher-bot-mode enables parallelism and uncolored output
+	./out/bld/base_unittests --test-launcher-bot-mode --gtest_filter="-$broken"
+}
+
+check_net_unittests() {
+	# XXX:
+	# CI only (k8s?)
+	broken="AddressTrackerLinuxNetlinkTest.TestInitializeTwoTrackersInPidNamespaces"
+	broken="$broken:CertDatabaseNSSTest.ImportFromPKCS12AsExtractableAndExportAgain"
+	broken="$broken:CertDatabaseNSSTest.ImportFromPKCS12AsUnextractableAndExportAgain"
+	broken="$broken:CertDatabaseNSSTest.ImportFromPKCS12OnlyMarkIncludedKey"
+	broken="$broken:CertDatabaseNSSTest.ImportFromPKCS12Twice"
+	broken="$broken:CertDatabaseNSSTest.ImportFromPKCS12WrongPassword"
+	broken="$broken:TrustStoreNSSTestAllowSpecifiedUserSlot.SystemRootCertOnMultipleSlots"
+	broken="$broken:TrustStoreNSSTestIgnoreSystemCerts.UserDbTrustForSystemRootHonored"
+	broken="$broken:TrustStoreNSSTestIgnoreSystemCerts.UserDbAnchorAndLeafTrustForSystemRootHonored"
+	broken="$broken:UDPSocketTest.SharedMulticastAddress"
+
+	./out/bld/net_unittests --test-launcher-bot-mode --gtest_filter="-$broken"
+}
+
+check() {
+	# vpython3 execs system python3 with this set
+	export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
+	# for vpython3 in cwd
+	export PATH="$PATH:$PWD/third_party/depot_tools"
+
+	check_base_unittests
+	check_net_unittests
+
+}
+
+package() {
+	cd ./out/bld
+
+	mkdir -p "$pkgdir"/usr/bin
+
+	# binaries
+	install -Dm755 chrome "$pkgdir"/usr/lib/$pkgname/chromium
+	# backward compat symlink
+	ln -sfv chromium "$pkgdir"/usr/lib/$pkgname/chrome
+	install -Dm4755 chrome_sandbox "$pkgdir"/usr/lib/$pkgname/chrome-sandbox
+	install -Dm755 chrome_crashpad_handler -t "$pkgdir"/usr/lib/$pkgname/
+
+	# chromedriver
+	install -Dm755 chromedriver.unstripped "$pkgdir"/usr/lib/$pkgname/chromedriver
+	ln -sfv ../lib/$pkgname/chromedriver "$pkgdir"/usr/bin/chromedriver
+
+	# headless shell
+	install -Dm755 headless_shell "$pkgdir"/usr/lib/$pkgname/chromium-headless-shell
+	ln -sfv ../lib/$pkgname/chromium-headless-shell "$pkgdir"/usr/bin/chromium-headless-shell
+
+	# resources
+	install -Dm644 snapshot_blob.bin -t "$pkgdir"/usr/lib/$pkgname/
+	install -Dm644 v8_context_snapshot.bin -t "$pkgdir"/usr/lib/$pkgname/
+	if [ -f icudtl.dat ]; then
+		install -Dm644 icudtl.dat -t "$pkgdir"/usr/lib/$pkgname/
+	fi
+
+	install -Dm755 xdg-mime -t "$pkgdir"/usr/lib/$pkgname/
+	install -Dm755 xdg-settings -t "$pkgdir"/usr/lib/$pkgname/
+
+	# Vulkan
+	install -Dm755 libvulkan.so.1 -t "$pkgdir"/usr/lib/$pkgname/
+
+	# Angle
+	install -Dm755 libEGL.so -t "$pkgdir"/usr/lib/$pkgname/
+	install -Dm755 libGLESv2.so -t "$pkgdir"/usr/lib/$pkgname/
+
+	install -Dm755 "$srcdir"/chromium-launcher.sh \
+		-t "$pkgdir"/usr/lib/$pkgname/
+
+	cp -a MEIPreload "$pkgdir"/usr/lib/$pkgname/
+
+	# It is important that we name the target "chromium-browser",
+	# xdg-utils expect it; bug https://bugs.gentoo.org/355517
+	ln -sfv ../lib/$pkgname/chromium-launcher.sh "$pkgdir"/usr/bin/chromium-browser
+	ln -sfv chromium-browser "$pkgdir"/usr/bin/chromium
+
+	install -Dm644 "$srcdir"/chromium.conf \
+		-t "$pkgdir"/etc/chromium/
+
+	for pak in locales/*.pak *.pak; do
+		install -Dm644 "$pak" "$pkgdir"/usr/lib/$pkgname/"$pak"
+	done
+
+	install -Dm755 libvk_swiftshader.so \
+		-t "$pkgdir"/usr/lib/$pkgname/
+	install -Dm755 vk_swiftshader_icd.json \
+		-t "$pkgdir"/usr/lib/$pkgname/
+
+	cd "$builddir"
+
+	for size in 24 48 64 128 256; do
+		install -Dm644 "chrome/app/theme/chromium/product_logo_$size.png" \
+			"$pkgdir/usr/share/icons/hicolor/${size}x$size/apps/chromium.png"
+	done
+
+	for size in 16 32; do
+		install -Dm644 "chrome/app/theme/default_100_percent/chromium/product_logo_$size.png" \
+			"$pkgdir/usr/share/icons/hicolor/${size}x$size/apps/chromium.png"
+	done
+
+	sed -i \
+		-e 's/@@MENUNAME@@/Chromium/g' \
+		-e 's/@@PACKAGE@@/chromium/g' \
+		-e 's/@@USR_BIN_SYMLINK_NAME@@/chromium-browser/g' \
+		chrome/app/resources/manpage.1.in \
+		chrome/installer/linux/common/desktop.template
+
+	sed -ni \
+		-e 's/chromium-browser\.desktop/chromium.desktop/' \
+		-e '/<update_contact>/d' \
+		-e '/<p>/N;/<p>\n.*\(We invite\|Chromium supports Vorbis\)/,/<\/p>/d' \
+		-e '/^<?xml/,$p' \
+		chrome/installer/linux/common/appdata.xml.template
+
+	install -Dm644 chrome/installer/linux/common/desktop.template \
+		"$pkgdir"/usr/share/applications/chromium.desktop
+	install -Dm644 chrome/app/resources/manpage.1.in \
+		"$pkgdir"/usr/share/man/man1/chromium.1
+	install -Dm644 chrome/installer/linux/common/appdata.xml.template \
+		"$pkgdir"/usr/share/metainfo/chromium.appdata.xml
+}
+
+common() {
+	pkgdesc="Shared resources for main chromium package and chromium-headless-shell"
+	depends="$pkgname-angle=$pkgver-r$pkgrel"
+
+	# en-US is the default, other locales are handled in -lang subpackage
+	amove usr/lib/$pkgname/locales/en-US.pak
+
+	amove usr/lib/$pkgname/headless_command_resources.pak \
+		usr/lib/$pkgname/v8_context_snapshot.bin
+}
+
+qt6() {
+	pkgdesc="chromium qt6 shim"
+
+	amove usr/lib/$pkgname/libqt6_shim.so
+}
+
+chromedriver() {
+	pkgdesc="WebDriver driver for the Chromium Browser"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	amove usr/lib/$pkgname/chromedriver \
+		usr/bin/chromedriver
+}
+
+headless_shell() {
+	pkgdesc="Headless shell providing old headless mode for Chromium"
+	depends="$depends $pkgname-swiftshader=$pkgver-r$pkgrel"
+
+	amove usr/lib/$pkgname/chromium-headless-shell \
+		usr/bin/chromium-headless-shell
+	amove usr/lib/$pkgname/headless_*
+}
+
+lang() {
+	pkgdesc="Languages for package $pkgname"
+	install_if="$pkgname=$pkgver-r$pkgrel lang"
+	depends=""
+
+	# Default to en-us and provide everything else through the chromium-lang package
+	# (en-US is split off in -common subpackage)
+	amove usr/lib/$pkgname/locales/*.pak
+}
+
+angle() {
+	pkgdesc="Chromium web browser: ANGLE based hardware acceleration"
+	depends=""
+
+	amove usr/lib/$pkgname/libEGL.so \
+		usr/lib/$pkgname/libGLESv2.so \
+		usr/lib/$pkgname/libvulkan.so.1
+}
+
+swiftshader() {
+	pkgdesc="Chromium web browser: CPU-based implementation of the Vulkan graphics API"
+	depends="$pkgname-angle=$pkgver-r$pkgrel"
+
+	amove usr/lib/$pkgname/libvk_swiftshader.so \
+		usr/lib/$pkgname/vk_swiftshader_icd.json
+}
+
+sha512sums="
+00bdc995b90b69f537d3b4206f99f03befc3f511f65752e33ced7448804c3cb7ca5ffdb7f00a085eb62e0c8641f8979964a47f515d23022d5c9dfce7eb406a97  chromium-139.0.7258.66-linux.tar.xz
+594c5c3e489224d569b34514e829994126f1a540f7721870629fdf1b5d9e9a187616bcc2b91677a73cb35a998abbd5c38100a08267e801f009a0af00936cd136  chromium-139.0.7258.66-linux-testdata.tar.xz
+bbc928e99ebcd4d953b982688b01526cb754bad018f67be9e777a4f8ac51cdd3e01374e5a63faf55b12e7cee0d52816c88062e012b5bcc4f9bb41f28d8e0b7f7  test_fonts-336e775eec536b2d785cc80eff6ac39051931286.tar.gz
+32e1edad4d149c489e6c6f6818cf2b2ed3c7ae1cb62600576f54d7315804e5be2c1b62716e1c1bcc445cc1e874299605cc2602b0b8ff5be665fb4b1b4f11f051  copium-138.0.tar.gz
+1b16564f85a03f3eb934ec51289dc6159e2454202d40f48354f947d6ceffac8889e9eb4c0f4dfaafb3a15101566d54039f832bc9a8433c3c463e2d1dac2d2acc  chromium-launcher.sh
+9cfcb41d69c5a515b6f9fe2a629579fa499e1f48eb58a0ce4ec8e5029d450bcafb6d963019aaac9a6838244bee9f9ba7fe5ef6146a0ca6b20fcda4ab7f059476  chromium.conf
+252cbc3d709de33193cbac728ee9ca85f11321ce95c20f80f4ae157f620307ce614a329c15c59745bf4996f4d5891fa11f5338f20ef77baccde35d593e4671eb  compiler.patch
+1bee1448e409fedff635388ee6f1efa6d23c29ae3e6b6fd31452c56974adb40fcd0088c82d1e643d549154663e402942cbab9807dff5aff2d8997a09de6f5655  disable-dns_config_service.patch
+0ef9168b8b1a4779bc4c8df718735e06d29e459dcfd00f8cbf9a4edaf9fade8089225219e46dead7de81de716bddc8d745dc2069db0ee7f7e5d2f64c5236e2ab  disable-failing-tests.patch
+5fc5c012c1db6cf1ba82f38c6f3f4f5ca3a209e47ac708a74de379b018e0649b7694877c9571ef79002dde875ffc07b458a3355425f1c01867f362c66c2bc1bf  fc-cache-version.patch
+87f63d83139562e058f3f649eb1f62bf100dd92c2bb6ee393fdce0c8f7d7c188a7062394647aafe4e82c0a8fbbffeb613edc5c8dd9415dd9dda777827ea371c5  fix-ffmpeg-codec-list.patch
+c63dee5044353eb306a39ca1526158c0f003ab310ecb03d1c368dc2a979454590c84b8d3c15484517d5e66bb8add9b231da9abbadf2e50850abd72ac1345c4ab  fstatat-32bit.patch
+33ee60863cc438ef57ffef92ba4cf67a856a5ffc16138bce241bcf87e47b15154aa86918e793c26f7ec4dc62a445257ad5673ed7001daf22c4043cf6cc57da7f  gdbinit.patch
+36a764fa73443b47d38050b52dbe6ad2fa8d67201ff4ccdbad13b52308ef165ca046aac6f9609fe35890a6485f0f3e672e78cc41e3e44f3cdc7f145e540524e8  generic-sensor-include.patch
+a94cf7a0670abf5178abba33c619cc6d41d73f2e16c7a1fd5b152152f5077df103e049d166e3b8627797c38113821d2f2e6b64cd48d132c1e90ad32d63a349f5  headless-shell-no-license.patch
+51f1959bd622af26a1c3a1f4b0ad9a5bfa461057aa4cf9960c568dddf8ac47d55989c277f5d5ab5db040a04c54925a531af7a1cc767559218b408eaa6bdd7577  musl-sandbox.patch
+e7163ac5810ac85366cef2447412287c856e3d67c6b77f219a6e5a418b1965b98e449c409424ad0704a5bded9355dd0aec3dc4585918ce5a2ab36c079707afe2  musl-tid-caching.patch
+413da7ed0b742053439c1941b7b40a296141d0bbe8de699aad19182754215688ab8fc8cc7d36c65df9ac99d42c3d87c466df88d9e0490399666c2a5ebfe1768a  net-test-no-vpython.patch
+e487662b6606ea526ddd716c31e6b9ad3d61f1bee5356cd94b78a903efb3928338cbb48e3d5840b34c3b70a71e8361a228430bd50e707ad301228a7049d59e37  net-test-pyws3-py3.12.patch
+a250cff50d282b02ce0f28880d0a2b4fb8e7df51bc072bfeeddc561c29a7c76453dbcbc7b17b82966a7b30a31409d2555720d1dcf963e1b3fb8a2a06a6abcf46  no-execinfo.patch
+0b41aeb6b212f9c3f61aa0a8d3085c9e865a2e68f3270ceec2376aab67f337ac46eaea7da36d3fd7219e2a1cb731b7aa2d3fb619a374d2b7653976b9f4f384bb  no-mallinfo.patch
+e4c4e5bc6f828f9c883dd418c0ba01887949c29c311f76206a1ec29f620b0c0ba0452949dc2778a9c46ea066405857536964a36436a68eecf7da7952736333cf  no-res-ninit-nclose.patch
+6dc4d8dc92e685dace62265a1ddb3aebc558aed54d20ff6d36b030be0c48d7e84662326c31363612492574d9a03c62653cdc21a60995b97dee1d75cae86a9f9b  no-sandbox-settls.patch
+b75908a45ee2f4f806eec8d86fca2f51fda3531b88de48ef4539c364a40d7e2897cdaf38b715682d712648e3f43aac983055e688385f85fa7b7204ffb6d617e1  partalloc-no-tagging-arm64.patch
+03f829a2da633533ef3fd0f287f5ec602d936a97a98b53cd2415553c2537ae9d571f35397ca7c9fb3f4b0806c300e3b189569f8d979ca132e1a2a4dae7206396  pvalloc.patch
+e48693e6b7aeebf69a5acbf80d9a35defe4c23835121dfeb58b051ac7c527e758a41004f4d193274fe1b01c0bfb1dbc77b09cb6a404a3fdee507a2918afb0edb  temp-failure-retry.patch
+1a191764ca57962af02947eed9565a2ced8acde12b1e098d7178d4f0b86495f1d7c64636f8a92581475f34545e95b424c2fa359e2d742b435e7339a0ad60fdc0  block-requests.patch
+1c0a7ce344873d8b2f128e21ba82c15c50d424d846578f1c8588b7e16dad4762ecc6f1718710c3bf32af38d460fed46f92ddde6a1aa10e68de589b2e0e08bb4f  block-trk-and-subdomains.patch
+655d6124fd28eef8c0e2f09c064f0c8912dbfee13f2f54c5988efd2a678f31cd4cb6d5dc658990381def1cc587fca7f90c3ac2d73fa29e151110d3a52b868bfb  disable-crash-reporter.patch
+9b84d90a2d3a648de35d7065f3f42303c772667f9908acb5ab038e50f3543575727e892f9a442970ce484f4746ed2f074d7dd791de63d4c11cb96c9457387f8a  disable-domain-reliability.patch
+141481e672cebe80c8cdb3801d6afe85908fed3cf0ace7b30fc5781775fff7634bc28208fb825cb48d8a5b27ccff88531e05a492682494061e3eb6b787e64619  disable-fonts-googleapis-references.patch
+22bb522715b198264a6f9da1be77226b24d7d6d7a79e454c282e5bbf98c9d0ffdf24083625ab67fc08d562219568e0135c064dbe351c25f06b5f976a87ac12c1  disable-gaia.patch
+a7cc85785df415a3168edd58c5cdeabeb242cd53932f86627a9092616dfcd61d1921908817642e00077a219f05b17d8af6cce3f618e161798bb441fdd7efac0f  disable-gcm.patch
+6589980444b23031556bb2afaf7f4b9281e37cedd415498cff1013366dda8f21dff05c3b63f2e42d91e9ca1ac48b199dc1c41179170201d129becd020bd350e9  disable-google-host-detection.patch
+78853dd7dc5828502c4b4e72d5a2be1658fd0a58c3a6084bbda33c90fd412f670124a6a0d40a536e233c134d7cb7aaa0b30ce6751b288c6e557d30891b47b72b  disable-network-time-tracker.patch
+5d88d3f6ef355cae4826d63886df65a938d3358ee9df70e6efc77b78266557a947adfda04cdb9fdbb27a6c237754441914afdfb9575cf5cfc362e75ae271c151  disable-privacy-sandbox.patch
+db69884da38ab99d4e8228173aadd9203d57c358578377728883b48a8d0e1dd2c3c364f6586b5ccb34c7392e5956c9bef02cb3326c48abdd281fd75bfa59efe0  disable-profile-avatar-downloading.patch
+d856a891f2576ed33595c2a37653d1e8a2690e2650d73a38a5152ffe453ee3ac0b9c228b812cbb5cd2355e68eb19d27db32d0a44db0b870f3182f7254552f176  disable-webrtc-log-uploader.patch
+32671061cafef780f3972b9bf967e15d0ade63c5a9260da1ef32fbabaa5b3d820d131886851db246488384f06258aa420101b696e06b9ae8bea0c43230aa4af1  disable-webstore-urls.patch
+9a8f7d6f2f7c2d0bfb188a0eb147fa08c5b682020ba0ecf7ab257f098b1926e3a40331785e6243200ec86b8ddc40a484e41cfa22ab8bb36ef090ec35ec5261fe  doh-changes.patch
+b37596f87fd4b6900404747af6314002ae80f21667ee2e5283edb2813601a9204ef5f982ad7e111ed83bf16524eee2a6be2fae901d92053fc430d48d3683d0dd  extensions-manifestv2.patch
+cec2912f1549eef1ecb4ed01207216c0fa2974692ace80f67edc6ef836d7fe656a03aa9f583ad7342fb077e8778dd49a834bae60e0177403a97198a309661d82  fix-building-with-prunned-binaries.patch
+3b7fd921e26d8abbe77afd42a41e31e4101eb4dd406d723ca6ea37ee546e58d6c3ac89ad64071a20b2bf0c55fb041fc5ecb68b999b90831fad1c4a74d0b81c08  fix-building-without-safebrowsing.patch
+7e7c6a625fe00510b1d2273ba7152a6eb45a8efe1db1fd7a0ba6526c157d95615e5f493c30904002b8f7bf79e6a7cf313e874e2b83d6c63c6217fb59b72a3ae5  fix-learn-doubleclick-hsts.patch
+88c4111528a3585f3e2be5a8fc628dcbb41e0311d69c676e25535a614ba2a2ef99f09c8889e73cb63bc621f8798bed6497dbb7f0242174c28f42a1751194bd05  remove-f1-shortcut.patch
+26b6b50965b196ab1dfd5651c159e349a6c92ede7183148f5227d799bf9fd8c3080f0dfca7b6b317d88889bff0acdba0e7017a72c98dba22f22812374115bc39  remove-unused-preferences-fields.patch
+e5172f0cbae07dc63b8fcded0c1a6e2fca237472a94d858299721bc90e32dcbff249b6ee9c193715d12800c424a56434d6567e2984f68a6711b4e5e32b2e49cb  replace-google-search-engine-with-nosearch.patch
+aa7db8eac40925c99fca39ac11f882483aac4db7e7c079ba05048cc8e24e5fc800704647079c0d54ca6d7fa8a0aa6b8dbe1cb85f77285486ef6786772c739f21  toggle-translation-via-switch.patch
+7c9dfb63e735718fbd4498adca142e83cf4a164e1b5a31e6db3425dc1f4ef3b89c138d5cd47f600e31b39495abf34dff9b7bbb4444475710910eb0d78ac4e414  disable-chromelabs.patch
+3776f08c55b70bc5627b13e7fd80d27223eb95126f01788ccfccb09979b3f82ca3a504fe166c5e397f5b6aaae4d88ba7a20f869a63f753354eb6b38dc4740db1  disable-download-quarantine.patch
+b25b4bcea6911e4190c835a1a01d2121cf3c910a2cebb80fedb4c3673640238c6aa1ee03a966fed7891c4a8e6eb1f457c0b4a5ed1af877b3defef50910e4cfe8  disable-downloads-page-referrer-url.patch
+2af9a43cb519a246e39a91eb89ac5dd6f71c84f1f546a59f62183272ed37a2463ff2649d68510a5b1d4d116e985abadd4e756a54973dc33d6dbcfefd9c2bb3d8  disable-formatting-in-omnibox.patch
+7d950a249869d81d63f7b999fc76af945c2e76e891354d7f0cc62580c31b9f47acbe918fae1016982dcfbd1f0ae1f0c3b993ad6ad4c939082c689ca2faf80da0  disable-intranet-redirect-detector.patch
+292c33caa9ce279f52eeb383c87b457d61d8555ef1ac9fd78928cf1b8a5295a6d51ae6c98b5699b0d82197f91b9b759fb6a138c91bca5200a669753cd5a18588  disable-remote-optimization-guide.patch
+9bea356c2c63c5d503479fd6b46e49309e464757dbd757e86591b131c1419b7d8ec417475e502623d2a8883ff621fd64700c07df308f44af2fa37bec12647fda  first-run-page.patch
+02bffe75c4dc3ddd56b8502b952b11d991e0e9f53d636c800e72af3fd4739abf9686ca10182f5f577ea334aad87141d9497c8b2eb31661efa7df6ae34c60050c  fix-distilled-icons.patch
+e105b2c38ff73de7c3cc79929493db9078ced38664cc9fdb0b423d67bb723cb721f9e1ae1ab238d0e12ed81db78b7c922cf16560f6810be92a9e7efb144eacdb  keep-expired-flags.patch
+ff4ba9e603749858e69f008ee5717695c44e265d874554d3cdb5e604fda0f090efce1a3d9755b44cbcf9a96d85772db531883ce7ae9ff8f77369fde2e08d19be  prepopulated-search-engines.patch
+f2ebf0c0abcd69f0cc43f8611184dcafe8ba5435277dcc1c800b7829b0e52d52585a1447a4a91e33dfdbd3570ccee12bb4730898449ac7928b51ffaf3ff51a09  remove-disable-setuid-sandbox-as-bad-flag.patch
+e5aadb6827d25e08784c06e2bd65481500c1a683c654e0ea90174405dc34347efe73c5bc7300269024715c21961151fe2435fc35c8061c7986c8cf1fa0f62776  remove-pac-size-limit.patch
+6369ac889a79fe78cd0e45285b6979529c5e4e74b0100ef62adc5c0870a0aebff58c53147ab48593a454562ad5c740164566fd7bc4aed514c171157e141e3d6b  remove-uneeded-ui.patch
+652143f4aefb8a4dbd5d80e14ac96fcd2199aa444c47a80b79b4c5a3a0d0184e30adbebf81998c6d8a67af956c01fa997095cd2b49a3a9b5ba106c584245a3bd  change-no_sanitize-to-sanitize-rust.patch
+267755d9821cb55bc429aaf904103837670582e5afe11ab428a33a6ddd79aa9fe5e9a7c099d332a5ee716218da04b5f953d5c10c6b1b0c0240f9b8967fe18982  disable_libvpx_decoding.patch
+b9e997d2eee2fc91a943f560024cf6cf8f867d5a8fd739a67e26a057cc12d1ea054149ec7c49984d9a210cb8ee24d7bebac3e6fa7a57423ce70da8f9158797fe  rust-alloc-error-handler-v2-stub.patch
+7a8b2f6749eda75a77e020dd1bafba9d99e01cb6274befe9a60437610007f280964beed1d2439285915aea04ba2e1f534cfa2c4427c418cb74e31e16106d31e4  revoked-permissions-profile-include.patch
+d85cd418310b65ec1ef203c716c569bc408bd8579db600d190ecfdceff7838ee82a61b516fa22f695c6b2d3711cad0b83aa43008fa3e48fde991cc81087d0627  enterprise-signals-missing-includes.patch
+82103e4c75663e94117189b3541b19a861d59baf27f438585df56ada5f8f623a08a1c20e17745bd85fab2fafa0590da1e797f3fdc8aaeb7ca3a42e57bb4007f0  trigger-manager-no-extended-reporting.patch
+66efb68dada3d2f64a97983efe995779532fe79a0d0b158a27822c163611f9fa9c16b1d93a925f229196e682c670ef983512d441f62d400080ff3a61baf14ed2  url-checker-delegate-no-enhanced-protection.patch
+f55aed25f6f0c93783237c2b0d96c16d6cf61138b481cebccbbe6885142cda6ee7036068237f29cd2b07935f09b2699fb2994132dd0b498c981809e7a044dab3  download-danger-prompt-no-sb-surveys.patch
+5cc25294762ce9cbb0c4c1cbf1c079630a870a793717c37fb181dc566d6ffda61274e50ed02e54f1f31244ef4b4f946d08a3a076515eae22608fe04bc5ad858c  enterprise-util-interstitial-stubs.patch
+44a68999fc64556743eb648e64372778789b07851f612aeb5752f9007c1f5b19c052390fdf93fe60f58322c8b9bdc4293d31866bd647727ed8bb8553dfb20617  qr-code-rust-lifetime-syntax.patch
+d47d3c340e267609616b1a9a9b001ce0564a4aea9144b43253a44d5531db7a877d4d90bfaed0fd6a933f8fe82d6894fa653a19e48e16a2f4124a8fc80912979a  root_compositor_20_fps_mod.patch
+f6e7ac4bb420ec80f738e22bf678b9ef94cae796c489ce945c8beace5316e15f8c864cb9caf7224c1279a61a68a27c079ee0bae3f2e8ae3e0f2decb7b794d2a9  rust-no-unicode-width-rlib.patch
+9b7c2d284500e1abb2dcec1f4a3d581ac54b55924dbd55f34d50fbff0f9b2a20c0be08cf551c259271260394d8ed2093a0e3d8b7783d429b4ea77042ff088ec9  rustc-depfile-multiple-outputs.patch
+4188cfb0a856d9bedb4d84157eb0366a72d0d398d853364801fb4cf9e02d4de70bd66c94ad348ed26b6ba0f80e876f432447b8c09078d3c3a8efab1859e539a5  webrtc_remove_audio_process.patch
+70dbbb6de8b09754c5715b3a020fb558b9cf8ec23ac886ad169652f26620b06d95cc441da33ae0e125519c1d45157b32652406ea1141456a731b8721ded3054c  webrtc-no-frame-refresh.patch
+dc9c6fe92b530c4951228df6b3211a71ec83700977e26dee6221a997515a63230442bef2c4ec9cbad09005397034e5c84caf54f90e6cf8b65d0f2dab80e9d63c  webrtc-no-opus-decode.patch
+"

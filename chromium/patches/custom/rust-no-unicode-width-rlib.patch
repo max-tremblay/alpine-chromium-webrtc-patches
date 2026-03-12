@@ -1,0 +1,9 @@
+--- a/build/rust/std/BUILD.gn
++++ b/build/rust/std/BUILD.gn
+@@ -42,7 +42,6 @@ stdlib_files = [
+     "rustc_demangle",
+     "std_detect",
+     "test",
+-    "unicode_width",
+     "unwind",
+   ]
